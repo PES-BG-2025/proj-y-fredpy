@@ -2,23 +2,11 @@ import requests
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+import api_client
 
-API_KEY = "6f87a4be50cef4ad00bd25a16db9f1b0"
-BASE_URL = "https://api.stlouisfed.org/fred/series/observations"
 
 def get_fred_series(series_id, start=None, end=None):
-  params = {
-    "api_key": API_KEY,
-    "file_type": "json",
-    "series_id": series_id
-  }
-  if start:
-    params["observation_start"] = start
-  if end:
-    params["observation_end"] = end
-  response = requests.get(BASE_URL, params=params)
-  response.raise_for_status()
-  data = response.json()
+  data = api_client.get_observations(series_id, start, end)
   df = pd.DataFrame(data["observations"])
   df["date"] = pd.to_datetime(df["date"])
   df["value"] = pd.to_numeric(df["value"], errors="coerce")
