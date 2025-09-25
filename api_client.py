@@ -17,8 +17,8 @@ def get_observations(id_serie:str, fecha_inicial, fecha_final):
         "api_key" : API_KEY,
         "file_type" : "json",
         "series_id" : id_serie,
-        "realtime_start" : fecha_inicial,
-        "realtime_end" : fecha_final
+        "observation_start" : fecha_inicial,
+        "observation_end" : fecha_final
     }
     result = requests.get(url, params)
     return result.json()
@@ -42,5 +42,5 @@ def get_series_info(series_name:str):
 # print(get_series_info("EXPGS"))
 # print(get_observations("EXPGS", "2024-01-01", "2025-01-12"))
 
-# print(get_series_info("GNPCA"))
-# print(get_observations("GNPCA", "2024-01-01", "2025-01-12"))
+# print(get_series_info("IMPGS"))
+# print(get_observations("IMPGS", "2024-01-01", "2025-01-12"))
