@@ -29,3 +29,4 @@ def actualizar_archivos_csv() :
     transformar_csv(api_client.get_observations("IMPGS", "2000-01-01", "2025-01-12"), "IMPGS_out.csv")
     transformar_csv(api_client.get_observations("GNPCA", "2000-01-01", "2025-01-12"), "GNPCA_out.csv")
 
+actualizar_archivos_csv()
