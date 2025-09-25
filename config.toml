@@ -1,0 +1,3 @@
+[app]
+fred_url = "https://api.stlouisfed.org/fred"
+api_key = "6f87a4be50cef4ad00bd25a16db9f1b0"
