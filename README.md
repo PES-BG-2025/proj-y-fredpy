@@ -65,3 +65,78 @@ El presente proyecto tiene como objetivo que el estudiante conozca nuevos paquet
   - No entender el código brindado por los chatbots (uso ciego).
   - No entender la organización del código porque todo fue elaborado por el chatbot.
 
+
+------------------------------------------------------
+-----------------------------------------------------
+# FREDpy (Dashboard de variables macroeconómicas de EE.UU.)
+## “Indicadores Externos y Actividad Económica con FRED: Exportaciones, Importaciones y PNB”
+
+## 1) Resumen
+El proyecto consiste en un **pipeline de datos en Python** para consultar la API de **FRED** (Federal Reserve Bank of St. Louis), obtener **series temporales de Exportaciones, Importaciones y PNB** de EE. UU., y producir:
+1) **Gráficas comparables** (niveles y tasas de variación),
+2) Un **dashboard interactivo** (Dash) para explorar periodos.
+
+El resultado permitirá analizar la relación entre el sector externo y la actividad económica de forma reproducible y extensible.
+
+---
+
+## 2) Objetivos
+- **O1.** Consumir la API de FRED de forma programática y robusta (módulo Python reusable).
+- **O2.** Estandarizar y documentar el **proceso ETL** (extracción, transformación y carga).
+- **O3.** Generar **visualizaciones** y un **dashboard** con filtros por rango de fechas (variación trimestral).
+
+- **O4.** utilización de las librerios `dash` para el dashboard y `requests` para consumir API de la FRED
+---
+
+## 3) Alcance y Entregables
+- **PNB** (trimestral).
+- **Exportaciones de Bienes y Servicios** (trimestral).
+- **Importaciones de Bienes y Servicios** (trimestral).
+
+**Nota:** Las IDs exactas de FRED se parametrizarán. Evitamos hardcodear IDs para facilitar mantenimiento.
+
+---
+
+## 4) Metodología y Arquitectura
+
+- **Autenticación:** API Key de FRED `config.toml`.
+- **Frecuencias:** Trimestral
+- **Transformaciones:** 
+  - **Δ% trimestral (QoQ)**
+---
+
+## 5) Endpoints de FRED a utilizar (plan)
+- **Búsqueda de series:** `GET /fred/series/series`  
+  - Obtener información para el uso de indices “Exports of Goods and Services”, “Imports of Goods and Services” y "Real Gross National Product".
+- **Datos de series:** `GET /fred/series/observations`  
+  <!-- - Parámetros: `series_id`, `observation_start`, `observation_end`, `frequency`, `aggregation_method`, `output_type`. -->
+  Parámetros: `series_id`, `observation_start`, `observation_end`, `output_type`.
+<!-- 
+> Se implementarán **funciones wrapper**:  
+> `search_series(query, limit=5)`, `get_series(series_id, params)`, y utilidades para *rate limiting*, *retries* y *logging*. -->
+
+---
+
+## 6) Indicadores y Visualizaciones
+
+### 6.2 Gráficas (iniciales)
+1. **Línea** Importaciones e importaciones
+2. **Línea** Producto nacional bruto
+3. **Línea** Variaciones trimestrales (QoQ)
+
+---
+
+## 7) Dashboard
+- **Filtros:** Fecha inicial/final, transformación (QoQ).
+- **Pestañas:**
+  - **Explorar Series** (líneas con tooltips),
+  - **Descargas** (PNG).
+
+## 8) Librerías a utilizar:
+- `requests`: para el API client
+- `plotly express`: para visualización estadísticas (gráficas)
+- `pandas`: para la manipulación de datos
+- `dash`: mostrar un dashboard web
+
+## 9) Presentación
+- Se creo la presentación del proyecto en **quarto** la cual esta ubicada en la carpeta *presentacion_quarto*
