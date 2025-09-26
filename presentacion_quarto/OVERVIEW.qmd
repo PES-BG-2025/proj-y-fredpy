@@ -1,0 +1,45 @@
+---
+title: "FREDpy"
+subtitle: Federal Reserve Bank - Dashboard
+author: David García y Daniel Monroy
+format: 
+    revealjs:
+        incremental: false
+        theme: dracula
+---
+
+## Descripción del proyecto
+
+El proyecto consiste en un **pipeline de datos en Python** para consultar la API de **FRED** (Federal Reserve Bank of St. Louis), obtener **series temporales de Exportaciones, Importaciones y PIB** de EE. UU y mostrarlas en un Dashboard web para visualizar cono evolucionan las variables macroeconómicas de este país.
+
+
+## Librerias utilizadas
+- requests
+- dash
+  - plotly.express
+  - pandas
+- tomllib
+
+## Arquitectura
+
+![Diagrama de componentes](diagrama_componentes.png)
+
+## api_client.py
+En el archivo `config.toml` se guarda la configuración que determina el comportamiento de un sistema y los recursos que utiliza 
+
+```toml
+[app]
+fred_url = "https://api.stlouisfed.org/fred"
+api_key = "6f87a4be50cef4ad00bd25a16db9f1b0"
+```
+obtener configuración usando libreria `tomllib`
+
+```python
+import tomllib as toml
+
+with open("config.toml", "rb") as file:
+    config = toml.load(file)
+    
+BASE_URL = str(config["app"]["fred_url"])
+API_KEY = config["app"]["api_key"]
+```
