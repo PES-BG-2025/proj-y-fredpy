@@ -207,7 +207,7 @@ David García y Daniel Monroy
 </section>
 <section id="descripción-del-proyecto" class="slide level2">
 <h2>Descripción del proyecto</h2>
-<p>El proyecto consiste en un <strong>pipeline de datos en Python</strong> para consultar la API de <strong>FRED</strong> (Federal Reserve Bank of St.&nbsp;Louis), obtener <strong>series temporales de exportaciones, importaciones y PNB</strong> de EE. UU y mostrarlas en un Dashboard web para visualizar cono evolucionan las variables macroeconómicas de este país.</p>
+<p>El proyecto consiste en un <strong>pipeline de datos en Python</strong> para consultar la API de <strong>FRED</strong> (Federal Reserve Bank of St.&nbsp;Louis), obtener <strong>series temporales de exportaciones, importaciones y PNB</strong> de EE. UU y mostrarlas en un dashboard web para visualizar como evolucionan las variables macroeconómicas de este país.</p>
 </section>
 <section id="api-de-la-fred" class="slide level2">
 <h2>API de la FRED</h2>
@@ -298,6 +298,100 @@ David García y Daniel Monroy
 <li>guardarlos en archivos <code>.csv</code></li>
 </ol>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href=""></a>df_observaciones.to_csv(filename, index<span class="op">=</span><span class="va">False</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="fredapp.py" class="slide level2">
+<h2>FREDapp.py</h2>
+<p>Utiliza las librerías panda, Plotly Express y Dash para visualizar estadísticas macroeconómicas de Estados Unidos. El archivo permite cargar datos, procesarlos, crear gráficos y mostrarlos en una aplicación web interactiva.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href=""></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb7-2"><a href=""></a><span class="im">import</span> plotly.express <span class="im">as</span> px</span>
+<span id="cb7-3"><a href=""></a><span class="im">import</span> dash</span>
+<span id="cb7-4"><a href=""></a><span class="im">from</span> dash <span class="im">import</span> dcc, html, dash </span>
+<span id="cb7-5"><a href=""></a><span class="im">from</span> dash.dependencies <span class="im">import</span> Input, Output</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<h3 id="panda"><em>panda</em></h3>
+<p>Se utiliza para la manipulación de datos en estructuras tipo DataFrame. Permite leer archivos CSV, convertir tipos de datos y filtrar información.</p>
+</section>
+<section id="plotly-express" class="slide level2">
+<h2>Plotly Express</h2>
+<p>Sirve para generar gráficos interactivos como líneas y dispersión. En este caso, se emplea para graficar series de tiempo de PIB, importaciones y exportaciones. <em>Ejemplo de uso:</em></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href=""></a>fig_gnpca    <span class="op">=</span> px.line(df_gnpca, x<span class="op">=</span><span class="st">"date"</span>, y<span class="op">=</span><span class="st">"value"</span>,</span>
+<span id="cb8-2"><a href=""></a>                       title<span class="op">=</span><span class="st">"PIB Real (GNPCA) - Fuente: FRED"</span>,</span>
+<span id="cb8-3"><a href=""></a>                       labels<span class="op">=</span>{<span class="st">"date"</span>: <span class="st">"Años"</span>, <span class="st">"value"</span>: <span class="st">"Billones de dólares"</span>})</span>
+<span id="cb8-4"><a href=""></a>fig_gnpcQoQ  <span class="op">=</span> px.line(df_gnpca, x<span class="op">=</span><span class="st">"date"</span>, y<span class="op">=</span><span class="st">"QoQ"</span>,</span>
+<span id="cb8-5"><a href=""></a>                       title<span class="op">=</span><span class="st">"GNPCA Variaciones Trimestrales - Fuente: FRED"</span>,</span>
+<span id="cb8-6"><a href=""></a>                       labels<span class="op">=</span>{<span class="st">"date"</span>: <span class="st">"Años"</span>, <span class="st">"QoQ"</span>: <span class="st">"QoQ"</span>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="dash" class="slide level2">
+<h2>Dash</h2>
+<p>Framework de Python para construir aplicaciones web interactivas. Integra gráficos de Plotly y controles como sliders para filtrar datos en tiempo real. <strong>Ejemplo:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href=""></a><span class="im">import</span> dash</span>
+<span id="cb9-2"><a href=""></a><span class="im">from</span> dash <span class="im">import</span> dcc, html</span>
+<span id="cb9-3"><a href=""></a></span>
+<span id="cb9-4"><a href=""></a>app <span class="op">=</span> dash.Dash(<span class="va">__name__</span>)</span>
+<span id="cb9-5"><a href=""></a>app.layout <span class="op">=</span> html.Div([</span>
+<span id="cb9-6"><a href=""></a>    html.H1(<span class="st">"Estadísticas Macroeconómicas de USA"</span>),</span>
+<span id="cb9-7"><a href=""></a>    html.H2(<span class="st">"Federal Reserve Bank"</span>),</span>
+<span id="cb9-8"><a href=""></a>    <span class="co"># Filtro de años</span></span>
+<span id="cb9-9"><a href=""></a>    html.Div([</span>
+<span id="cb9-10"><a href=""></a>        html.Label(<span class="st">"Rango de años"</span>),</span>
+<span id="cb9-11"><a href=""></a>        dcc.RangeSlider(</span>
+<span id="cb9-12"><a href=""></a>            <span class="bu">id</span><span class="op">=</span><span class="st">"year-range"</span>,</span>
+<span id="cb9-13"><a href=""></a>....</span>
+<span id="cb9-14"><a href=""></a><span class="cf">if</span> <span class="va">__name__</span> <span class="op">==</span> <span class="st">"__main__"</span>:</span>
+<span id="cb9-15"><a href=""></a>    app.run(debug<span class="op">=</span><span class="va">True</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="creación-de-dashboard" class="slide level2">
+<h2>Creación de dashboard</h2>
+<h3 id="carga-de-datos"><em>1. Carga de datos</em></h3>
+<p>Los datos se cargan desde archivos <code>.csv</code> y se convierte columna date a tipo fecha para utilizar el filtro</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href=""></a>df_gnpca <span class="op">=</span> pd.read_csv(<span class="st">"GNPCA_out.csv"</span>)</span>
+<span id="cb10-2"><a href=""></a>...</span>
+<span id="cb10-3"><a href=""></a><span class="cf">for</span> df <span class="kw">in</span> (df_gnpca, df_impgs, df_expgs):</span>
+<span id="cb10-4"><a href=""></a>    df[<span class="st">"date"</span>] <span class="op">=</span> pd.to_datetime(df[<span class="st">"date"</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<h3 id="preparación-de-datos"><em>2. Preparación de datos</em></h3>
+<p>Configurar el filtro interactivo con su min y max.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href=""></a>years_all <span class="op">=</span> pd.concat([df_gnpca[<span class="st">"date"</span>]).dt.year</span>
+<span id="cb11-2"><a href=""></a>ymin, ymax <span class="op">=</span> <span class="bu">int</span>(years_all.<span class="bu">min</span>()), <span class="bu">int</span>(years_all.<span class="bu">max</span>())</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="creación-de-dashboard-1" class="slide level2">
+<h2>Creación de dashboard</h2>
+<h3 id="creación-de-gráficos-iniciales"><em>3. Creación de gráficos iniciales</em></h3>
+<p>Se usan funciones de Plotly Express para crear gráficos de líneas con títulos y etiquetas.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href=""></a>fig_gnpcQoQ <span class="op">=</span> px.line(df_gnpca, x<span class="op">=</span><span class="st">"date"</span>, y<span class="op">=</span><span class="st">"QoQ"</span>,</span>
+<span id="cb12-2"><a href=""></a>                      title<span class="op">=</span><span class="st">"GNPCA Variaciones Trimestrales - Fuente: FRED"</span>,</span>
+<span id="cb12-3"><a href=""></a>                      labels<span class="op">=</span>{<span class="st">"date"</span>: <span class="st">"Años"</span>, <span class="st">"QoQ"</span>: <span class="st">"QoQ"</span>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="creación-de-dashboard-2" class="slide level2">
+<h2>Creación de dashboard</h2>
+<h3 id="construcción-de-la-aplicación-dash"><em>4. Construcción de la aplicación Dash</em></h3>
+<p>Se define un layout con encabezados, un control de rango de años y los gráficos. Los elementos se organizan en un diseño con estilo grid.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href=""></a>app.layout <span class="op">=</span> html.Div([</span>
+<span id="cb13-2"><a href=""></a>    html.H1(<span class="st">"Estadísticas Macroeconómicas de USA"</span>),</span>
+<span id="cb13-3"><a href=""></a>    html.H2(<span class="st">"Federal Reserve Bank"</span>),</span>
+<span id="cb13-4"><a href=""></a>    dcc.RangeSlider(<span class="bu">id</span><span class="op">=</span><span class="st">"year-range"</span>, <span class="bu">min</span><span class="op">=</span>ymin, <span class="bu">max</span><span class="op">=</span>ymax, step<span class="op">=</span><span class="dv">1</span>,</span>
+<span id="cb13-5"><a href=""></a>        value<span class="op">=</span>[ymin, ymax], marks<span class="op">=</span>{y: <span class="bu">str</span>(y) <span class="cf">for</span> y <span class="kw">in</span> <span class="bu">range</span>(ymin, ymax<span class="op">+</span><span class="dv">1</span>, <span class="dv">5</span>)}),</span>
+<span id="cb13-6"><a href=""></a>    dcc.Graph(<span class="bu">id</span><span class="op">=</span><span class="st">"gnpca-graph"</span>, figure<span class="op">=</span>fig_gnpca)</span>
+<span id="cb13-7"><a href=""></a>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="creación-de-dashboard-3" class="slide level2">
+<h2>Creación de dashboard</h2>
+<h3 id="callback-para-interactividad"><em>5. Callback para interactividad</em></h3>
+<p>La función se ejecuta cada vez que cambia el rango de años en el slider.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href=""></a><span class="at">@app.callback</span>(</span>
+<span id="cb14-2"><a href=""></a>    Output(<span class="st">"gnpca-graph"</span>, <span class="st">"figure"</span>),</span>
+<span id="cb14-3"><a href=""></a>    Input(<span class="st">"year-range"</span>, <span class="st">"value"</span>)</span>
+<span id="cb14-4"><a href=""></a>)</span>
+<span id="cb14-5"><a href=""></a><span class="kw">def</span> update_figures(year_range):</span>
+<span id="cb14-6"><a href=""></a>    start_year, end_year <span class="op">=</span> year_range</span>
+<span id="cb14-7"><a href=""></a>    m_g <span class="op">=</span> (df_gnpca[<span class="st">"date"</span>].dt.year <span class="op">&gt;=</span> start_year) <span class="op">&amp;</span> (df_gnpca[<span class="st">"date"</span>].dt.year <span class="op">&lt;=</span> end_year)</span>
+<span id="cb14-8"><a href=""></a>    fig_gnpca <span class="op">=</span> px.line(df_gnpca.loc[m_g], x<span class="op">=</span><span class="st">"date"</span>, y<span class="op">=</span><span class="st">"value"</span>)</span>
+<span id="cb14-9"><a href=""></a>    <span class="cf">return</span> fig_gnpca</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="dashboard-visual" class="slide level2">
+<h2>Dashboard visual</h2>
+
+<img data-src="dashboard_gui.png" class="r-stretch"></section>
+<section id="gracias-por-su-atención" class="title-slide slide level1 center">
+<h1>Gracias por su atención</h1>
 
 </section>
     </div>

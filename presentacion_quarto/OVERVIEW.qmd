@@ -11,7 +11,7 @@ format:
 
 ## Descripción del proyecto
 
-El proyecto consiste en un **pipeline de datos en Python** para consultar la API de **FRED** (Federal Reserve Bank of St. Louis), obtener **series temporales de exportaciones, importaciones y PNB** de EE. UU y mostrarlas en un Dashboard web para visualizar cono evolucionan las variables macroeconómicas de este país.
+El proyecto consiste en un **pipeline de datos en Python** para consultar la API de **FRED** (Federal Reserve Bank of St. Louis), obtener **series temporales de exportaciones, importaciones y PNB** de EE. UU y mostrarlas en un dashboard web para visualizar como evolucionan las variables macroeconómicas de este país.
 
 ## API de la FRED
 La API de FRED es un servicio web que permite a los desarrolladores acceder de forma programática a los datos económicos históricos y en tiempo real del Banco de la Reserva Federal de San Luis
@@ -103,3 +103,107 @@ def transformar_csv(data_dict:dict, filename:str):
 ```python
 df_observaciones.to_csv(filename, index=False)
 ```
+
+
+## FREDapp.py
+Utiliza las librerías panda, Plotly Express y Dash para visualizar estadísticas macroeconómicas de Estados Unidos. El archivo permite cargar datos, procesarlos, crear gráficos y mostrarlos en una aplicación web interactiva.
+
+```python
+import pandas as pd
+import plotly.express as px
+import dash
+from dash import dcc, html, dash 
+from dash.dependencies import Input, Output
+```
+### *panda*
+Se utiliza para la manipulación de datos en estructuras tipo DataFrame. Permite leer archivos CSV, convertir tipos de datos y filtrar información.
+
+## Plotly Express
+Sirve para generar gráficos interactivos como líneas y dispersión. En este caso, se emplea para graficar series de tiempo de PIB, importaciones y exportaciones.
+*Ejemplo de uso:*
+```python
+fig_gnpca    = px.line(df_gnpca, x="date", y="value",
+                       title="PIB Real (GNPCA) - Fuente: FRED",
+                       labels={"date": "Años", "value": "Billones de dólares"})
+fig_gnpcQoQ  = px.line(df_gnpca, x="date", y="QoQ",
+                       title="GNPCA Variaciones Trimestrales - Fuente: FRED",
+                       labels={"date": "Años", "QoQ": "QoQ"})
+```
+## Dash
+Framework de Python para construir aplicaciones web interactivas. Integra gráficos de Plotly y controles como sliders para filtrar datos en tiempo real.
+**Ejemplo:**
+``` python
+import dash
+from dash import dcc, html
+
+app = dash.Dash(__name__)
+app.layout = html.Div([
+    html.H1("Estadísticas Macroeconómicas de USA"),
+    html.H2("Federal Reserve Bank"),
+    # Filtro de años
+    html.Div([
+        html.Label("Rango de años"),
+        dcc.RangeSlider(
+            id="year-range",
+....
+if __name__ == "__main__":
+    app.run(debug=True)
+```
+
+## Creación de dashboard
+
+### *1. Carga de datos*
+Los datos se cargan desde archivos `.csv` y se convierte columna date a tipo fecha para utilizar el filtro
+```python
+df_gnpca = pd.read_csv("GNPCA_out.csv")
+...
+for df in (df_gnpca, df_impgs, df_expgs):
+    df["date"] = pd.to_datetime(df["date"])
+```
+
+### *2. Preparación de datos*
+Configurar el filtro interactivo con su min y max.
+```python
+years_all = pd.concat([df_gnpca["date"]).dt.year
+ymin, ymax = int(years_all.min()), int(years_all.max())
+```
+## Creación de dashboard
+
+### *3. Creación de gráficos iniciales*
+Se usan funciones de Plotly Express para crear gráficos de líneas con títulos y etiquetas.
+```python
+fig_gnpcQoQ = px.line(df_gnpca, x="date", y="QoQ",
+                      title="GNPCA Variaciones Trimestrales - Fuente: FRED",
+                      labels={"date": "Años", "QoQ": "QoQ"})
+```
+## Creación de dashboard
+### *4. Construcción de la aplicación Dash*
+Se define un layout con encabezados, un control de rango de años y los gráficos. Los elementos se organizan en un diseño con estilo grid.
+```python
+app.layout = html.Div([
+    html.H1("Estadísticas Macroeconómicas de USA"),
+    html.H2("Federal Reserve Bank"),
+    dcc.RangeSlider(id="year-range", min=ymin, max=ymax, step=1,
+        value=[ymin, ymax], marks={y: str(y) for y in range(ymin, ymax+1, 5)}),
+    dcc.Graph(id="gnpca-graph", figure=fig_gnpca)
+])
+```
+## Creación de dashboard
+### *5. Callback para interactividad*
+La función se ejecuta cada vez que cambia el rango de años en el slider.
+```python
+@app.callback(
+    Output("gnpca-graph", "figure"),
+    Input("year-range", "value")
+)
+def update_figures(year_range):
+    start_year, end_year = year_range
+    m_g = (df_gnpca["date"].dt.year >= start_year) & (df_gnpca["date"].dt.year <= end_year)
+    fig_gnpca = px.line(df_gnpca.loc[m_g], x="date", y="value")
+    return fig_gnpca
+```
+
+## Dashboard visual
+![](dashboard_gui.png)
+
+# Gracias por su atención
