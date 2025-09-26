@@ -1,0 +1,163 @@
+---
+title: "FREDpy"
+subtitle: Federal Reserve Bank - Dashboard
+author: David García y Daniel Monroy
+format: 
+    revealjs:
+        incremental: false
+        theme: dracula
+---
+
+## Descripción del proyecto
+
+El proyecto consiste en un **pipeline de datos en Python** para consultar la API de **FRED** (Federal Reserve Bank of St. Louis), obtener **series temporales de Exportaciones, Importaciones y PIB** de EE. UU y mostrarlas en un Dashboard web para visualizar cono evolucionan las variables macroeconómicas de este país.
+
+
+## Librerias utilizadas
+- requests
+- dash
+  - plotly.express
+  - pandas
+- tomllib
+
+## Arquitectura
+
+![Diagrama de componentes](diagrama_componentes.png)
+
+## api_client.py
+En el archivo `config.toml` se guarda la configuración que determina el comportamiento de un sistema y los recursos que utiliza 
+
+```toml
+[app]
+fred_url = "https://api.stlouisfed.org/fred"
+api_key = "6f87a4be50cef4ad00bd25a16db9f1b0"
+```
+obtener configuración usando libreria `tomllib`
+
+```python
+import tomllib as toml
+
+with open("config.toml", "rb") as file:
+    config = toml.load(file)
+    
+BASE_URL = str(config["app"]["fred_url"])
+API_KEY = config["app"]["api_key"]
+```
+## FREDapp.py
+Utiliza las librerías panda, Plotly Express y Dash para visualizar estadísticas macroeconómicas de Estados Unidos. El archivo permite cargar datos, procesarlos, crear gráficos y mostrarlos en una aplicación web interactiva.
+
+```python
+import pandas as pd
+import plotly.express as px
+import dash
+from dash import dcc, html, dash 
+from dash.dependencies import Input, Output
+```
+### *panda*
+Se utiliza para la manipulación de datos en estructuras tipo DataFrame. Permite leer archivos CSV, convertir tipos de datos y filtrar información.
+
+## Plotly Express
+Sirve para generar gráficos interactivos como líneas y dispersión. En este caso, se emplea para graficar series de tiempo de PIB, importaciones y exportaciones.
+*Ejemplo de uso:*
+```python
+fig_gnpca    = px.line(df_gnpca, x="date", y="value",
+                       title="PIB Real (GNPCA) - Fuente: FRED",
+                       labels={"date": "Años", "value": "Billones de dólares"})
+fig_gnpcQoQ  = px.line(df_gnpca, x="date", y="QoQ",
+                       title="GNPCA Variaciones Trimestrales - Fuente: FRED",
+                       labels={"date": "Años", "QoQ": "QoQ"})
+```
+## Dash
+Framework de Python para construir aplicaciones web interactivas. Integra gráficos de Plotly y controles como sliders para filtrar datos en tiempo real.
+**Ejemplo:**
+``` python
+import dash
+from dash import dcc, html
+
+app = dash.Dash(__name__)
+app.layout = html.Div([
+    html.H1("Estadísticas Macroeconómicas de USA"),
+    html.H2("Federal Reserve Bank"),
+    # Filtro de años
+    html.Div([
+        html.Label("Rango de años"),
+        dcc.RangeSlider(
+            id="year-range",
+            min=ymin, max=ymax, step=1,
+            value=[ymin, ymax],
+            marks={y: str(y) for y in range(ymin, ymax+1, max(1, (ymax-ymin)//8))}
+        
+if __name__ == "__main__":
+    app.run(debug=True)
+```
+
+## Explicación del Código
+
+### *1. Carga de datos*
+Los datos se cargan desde archivos CSV usando pandas.read_csv(). Se asegura que la columna 'date' sea del tipo fecha con pd.to_datetime().
+Código:
+```python
+df_gnpca = pd.read_csv("GNPCA_out.csv")
+df_impgs = pd.read_csv("IMPGS_out.csv")
+df_expgs = pd.read_csv("EXPGS_out.csv")
+
+for df in (df_gnpca, df_impgs, df_expgs):
+    df["date"] = pd.to_datetime(df["date"])
+```
+
+### *2. Preparación de datos*
+Se convierten las fechas a tipo datetime y se calcula el rango de años mínimo y máximo para configurar el filtro interactivo.
+Código:
+```python
+years_all = pd.concat([df_gnpca["date"], df_impgs["date"], df_expgs["date"]]).dt.year
+ymin, ymax = int(years_all.min()), int(years_all.max())
+```
+## Explicación del Código
+
+### *3. Creación de gráficos iniciales*
+Se usan funciones de Plotly Express (px.line) para crear gráficos de líneas con títulos y etiquetas. Se generan 6 gráficos: PIB, PIB QoQ, Importaciones, Importaciones QoQ, Exportaciones y Exportaciones QoQ.
+Código:
+```python
+fig_gnpca = px.line(df_gnpca, x="date", y="value",
+                   title="PIB Real (GNPCA) - Fuente: FRED",
+                   labels={"date": "Años", "value": "Billones de dólares"})
+
+fig_gnpcQoQ = px.line(df_gnpca, x="date", y="QoQ",
+                      title="GNPCA Variaciones Trimestrales - Fuente: FRED",
+                      labels={"date": "Años", "QoQ": "QoQ"})
+```
+### *4. Construcción de la aplicación Dash*
+Se define un layout con encabezados, un control de rango de años (dcc.RangeSlider) y los gráficos (dcc.Graph). Los elementos se organizan en un diseño con estilo grid.
+Código:
+```python
+app.layout = html.Div([
+    html.H1("Estadísticas Macroeconómicas de USA"),
+    html.H2("Federal Reserve Bank"),
+    dcc.RangeSlider(id="year-range", min=ymin, max=ymax, step=1,
+        value=[ymin, ymax], marks={y: str(y) for y in range(ymin, ymax+1, 5)}),
+    dcc.Graph(id="gnpca-graph", figure=fig_gnpca)
+])
+```
+## Explicación del Código
+### *5. Callback para interactividad*
+La función update_figures se ejecuta cada vez que cambia el rango de años en el slider. Filtra los datos según el año seleccionado y actualiza las 6 figuras de forma dinámica.
+Código:
+```python
+@app.callback(
+    Output("gnpca-graph", "figure"),
+    Input("year-range", "value")
+)
+def update_figures(year_range):
+    start_year, end_year = year_range
+    m_g = (df_gnpca["date"].dt.year >= start_year) & (df_gnpca["date"].dt.year <= end_year)
+    fig_gnpca = px.line(df_gnpca.loc[m_g], x="date", y="value")
+    return fig_gnpca
+```
+
+### *6. Ejecución de la aplicación*
+Finalmente, se arranca el servidor local con app.run(debug=True), lo que permite abrir la aplicación en un navegador.
+```python
+Código:
+if __name__ == "__main__":
+    app.run(debug=True)
+```
