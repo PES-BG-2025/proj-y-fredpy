@@ -1,96 +1,106 @@
 
 import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
-import os
-import api_client
-import plotly.express as px  # Reemplaza a seaborn y matplotlib
+import plotly.express as px
 import dash
-from dash import dcc, html
+from dash import dcc, html, dash 
+from dash.dependencies import Input, Output
 
+# Carga de datos
+df_gnpca = pd.read_csv("GNPCA_out.csv")
+df_impgs = pd.read_csv("IMPGS_out.csv")
+df_expgs = pd.read_csv("EXPGS_out.csv")
 
-# def get_fred_series(series_id, start=None, end=None):
-#   data = api_client.get_observations(series_id, start, end)
-#   df = pd.DataFrame(data["observations"])
-#   df["date"] = pd.to_datetime(df["date"])
-#   df["value"] = pd.to_numeric(df["value"], errors="coerce")
-#   return df, data.get("count", None)
-
-# def plot_series(df, title, ylabel):
-#   plt.figure(figsize=(12, 6))
-#   sns.lineplot(x="date", y="value", data=df)
-#   plt.title(title, fontsize=14)
-#   plt.xlabel("Fecha")
-#   plt.ylabel(ylabel)
-#   plt.show()
-
-# # PIB real USA
-# df_gnpca, _ = get_fred_series("GNPCA")
-# plot_series(df_gnpca, "PIB Real (GNPCA) - Fuente: FRED", "Billones de dólares")
-
-# # Importaciones de USA
-# df_impgs, count_impgs = get_fred_series("IMPGS", start="2000-01-01", end="2025-07-31")
-# plot_series(df_impgs, "IMPORTACIONES (IMPGS) - Fuente: FRED", "Billones de dólares")
-# print(f"Importaciones count: {count_impgs}")
-
-# # Exportaciones de USA
-# df_expgs, _ = get_fred_series("EXPGS", start="2000-01-01", end="2025-07-31")
-# plot_series(df_expgs, "EXPORTACIONES (EXPGS) - Fuente: FRED", "Billones de dólares")
-
-
-
-# Importa las funciones del cliente
-import api_client 
-
-# --- 1) Wrapper para convertir JSON -> DataFrame ---
-def get_fred_series(series_id: str, start: str | None = None, end: str | None = None):
-    """
-    Usa api_client.get_observations para traer datos y devolver (DataFrame, count).
-    """
-    data = api_client.get_observations(series_id, start, end)
-    obs = data.get("observations", [])
-    df = pd.DataFrame(obs)
-    if df.empty:
-        # asegura columnas esperadas para que Plotly no falle
-        df = pd.DataFrame(columns=["date", "value"])
-        return df, 0
+# Asegura tipo fecha (por si vienen como string)
+for df in (df_gnpca, df_impgs, df_expgs):
     df["date"] = pd.to_datetime(df["date"])
-    df["value"] = pd.to_numeric(df["value"], errors="coerce")
-    return df, int(data.get("count", len(df)))
+years_all = pd.concat([df_gnpca["date"], df_impgs["date"], df_expgs["date"]]).dt.year
+ymin, ymax = int(years_all.min()), int(years_all.max())
 
-# --- 2) Carga de datos ---
-print("Cargando datos desde la API de FRED...")
-df_gnpca, hola= get_fred_series("GNPCA", start="2000-01-01", end="2024-07-31")
-df_impgs, count_impgs = get_fred_series("IMPGS", start="2000-01-01", end="2025-07-31")
-df_expgs, hola= get_fred_series("EXPGS", start="2000-01-01", end="2025-07-31")
-print(f"Datos cargados. Se encontraron {count_impgs} observaciones de importaciones.")
-print(f"GNPCA {df_gnpca.shape}")
-# --- 3) Figuras Plotly ---
-fig_gnpca = px.line(
-    df_gnpca, x="date", y="value",
-    title="PIB Real (GNPCA) - Fuente: FRED",
-    labels={"date": "Fecha", "value": "Billones de dólares"}
-)
-fig_impgs = px.line(
-    df_impgs, x="date", y="value",
-    title="IMPORTACIONES (IMPGS) - Fuente: FRED",
-    labels={"date": "Fecha", "value": "Billones de dólares"}
-)
-fig_expgs = px.line(
-    df_expgs, x="date", y="value",
-    title="EXPORTACIONES (EXPGS) - Fuente: FRED",
-    labels={"date": "Fecha", "value": "Billones de dólares"}
-)
+# Graficas iniciales
+fig_gnpca    = px.line(df_gnpca, x="date", y="value",
+                       title="PIB Real (GNPCA) - Fuente: FRED",
+                       labels={"date": "Años", "value": "Billones de dólares"})
+fig_gnpcQoQ  = px.line(df_gnpca, x="date", y="QoQ",
+                       title="GNPCA Variaciones Trimestrales - Fuente: FRED",
+                       labels={"date": "Años", "QoQ": "QoQ"})
+fig_impgs    = px.line(df_impgs, x="date", y="value",
+                       title="IMPORTACIONES (IMPGS) - Fuente: FRED",
+                       labels={"date": "Años", "value": "Billones de dólares"})
+fig_impgsQoQ = px.line(df_impgs, x="date", y="QoQ",
+                       title="IMPGS Variaciones Trimestrales - Fuente: FRED",
+                       labels={"date": "Años", "QoQ": "QoQ"})
+fig_expgs    = px.line(df_expgs, x="date", y="value",
+                       title="EXPORTACIONES (EXPGS) - Fuente: FRED",
+                       labels={"date": "Años", "value": "Billones de dólares"})
+fig_expgsQoQ = px.line(df_expgs, x="date", y="QoQ",
+                       title="EXPGS Variaciones Trimestrales - Fuente: FRED",
+                       labels={"date": "Años", "QoQ": "QoQ"})
 
-# --- 4) App Dash ---
+# App Dash
 app = dash.Dash(__name__)
-app.layout = html.Div([
-    html.H1('Indicadores Económicos de EE.UU.', style={'textAlign': 'center'}),
-    dcc.Graph(id='pib-graph', figure=fig_gnpca),
-    dcc.Graph(id='importaciones-graph', figure=fig_impgs),
-    dcc.Graph(id='exportaciones-graph', figure=fig_expgs),
-])
 
-# --- 5) Run ---
+app.layout = html.Div([
+    html.H1("Estadísticas Macroeconómicas de USA"),
+    html.H2("Federal Reserve Bank"),
+
+    # Filtro de años
+    html.Div([
+        html.Label("Rango de años"),
+        dcc.RangeSlider(
+            id="year-range",
+            min=ymin, max=ymax, step=1,
+            value=[ymin, ymax],
+            marks={y: str(y) for y in range(ymin, ymax+1, max(1, (ymax-ymin)//8))}
+        )
+    ], style={"margin": "10px 30px"}),
+    html.Div([
+        dcc.Graph(id="gnpca-graph",        figure=fig_gnpca),
+        dcc.Graph(id="gnpca-qoq-graph",    figure=fig_gnpcQoQ),
+        dcc.Graph(id="expgs-graph",        figure=fig_expgs),
+        dcc.Graph(id="expgs-qoq-graph",    figure=fig_expgsQoQ),
+        dcc.Graph(id="impgs-graph",        figure=fig_impgs),
+        dcc.Graph(id="impgs-qoq-graph",    figure=fig_impgsQoQ),
+    ], style={"display": "grid", "gridGap": "20px", "gridTemplateColumns": "1fr 1fr"})
+], style={"textAlign": "center"})
+
+# Callback: actualiza las 6 figuras según el rango de años
+@app.callback(
+    Output('gnpca-graph', 'figure'),
+    Output('gnpca-qoq-graph', 'figure'),
+    Output('expgs-graph', 'figure'),
+    Output('expgs-qoq-graph', 'figure'),
+    Output('impgs-graph', 'figure'),
+    Output('impgs-qoq-graph', 'figure'),
+    Input('year-range', 'value')
+)
+def update_figures(year_range):
+    start_year, end_year = year_range
+
+    m_g = (df_gnpca["date"].dt.year >= start_year) & (df_gnpca["date"].dt.year <= end_year)
+    m_i = (df_impgs["date"].dt.year >= start_year) & (df_impgs["date"].dt.year <= end_year)
+    m_e = (df_expgs["date"].dt.year >= start_year) & (df_expgs["date"].dt.year <= end_year)
+
+    fig_gnpca = px.line(df_gnpca.loc[m_g], x="date", y="value",
+                        title="PIB Real (GNPCA) - Fuente: FRED",
+                        labels={"date": "Fecha", "value": "Billones de dólares"})
+    fig_gnpcQoQ = px.line(df_gnpca.loc[m_g], x="date", y="QoQ",
+                          title="GNPCA Variaciones Trimestrales - Fuente: FRED",
+                          labels={"date": "Fecha", "QoQ": "QoQ"})
+    fig_expgs = px.line(df_expgs.loc[m_e], x="date", y="value",
+                        title="EXPORTACIONES (EXPGS) - Fuente: FRED",
+                        labels={"date": "Fecha", "value": "Billones de dólares"})
+    fig_expgsQoQ = px.line(df_expgs.loc[m_e], x="date", y="QoQ",
+                           title="EXPGS Variaciones Trimestrales - Fuente: FRED",
+                           labels={"date": "Fecha", "QoQ": "QoQ"})
+    fig_impgs = px.line(df_impgs.loc[m_i], x="date", y="value",
+                        title="IMPORTACIONES (IMPGS) - Fuente: FRED",
+                        labels={"date": "Fecha", "value": "Billones de dólares"})
+    fig_impgsQoQ = px.line(df_impgs.loc[m_i], x="date", y="QoQ",
+                           title="IMPGS Variaciones Trimestrales - Fuente: FRED",
+                           labels={"date": "Fecha", "QoQ": "QoQ"})
+
+    return fig_gnpca, fig_gnpcQoQ, fig_expgs, fig_expgsQoQ, fig_impgs, fig_impgsQoQ
+
+# Run app
 if __name__ == "__main__":
-    app.run(debug=True) 
+    app.run(debug=True)
